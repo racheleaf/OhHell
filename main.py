@@ -1,7 +1,7 @@
 import game_util
+from functools import reduce
 
 game = game_util.Game(5)
-game.deal()
+game.play_round()
 
-for hand in game.hands:
-	print(len(hand.cards))
+
