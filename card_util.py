@@ -1,11 +1,11 @@
 import random
+import helpers
 
 class Card: 
 
 	def __init__(self, suit, rank):
 		self.suit = suit
 		self.rank = rank
-		self.face_up = False
 
 class Deck:
 
@@ -58,26 +58,8 @@ class Hand:
 
 	def print_all_cards(self):
 		all_cards = self.get_all_cards()
-		print("ALL YOUR CARDS:")
-		for card in all_cards:
-			print(card.suit, card.rank)
-
-	def get_you_card_choice(self):
-		card_chosen = None
-		while True:
-			card_str = input("Pick a card to play: ")
-			card_info = card_str.split(" ")
-			if len(card_info) == 2:
-				suit = card_info[0]
-				if suit in ["C", "D", "H", "S"]:
-					all_cards_in_suit = self.cards[suit]
-					rank = int(card_info[1])
-					for card in all_cards_in_suit:
-						if card.rank == rank:
-							card_chosen = card
-			if card_chosen:
-				break
-		return card_chosen
+		card_str_array = helpers.convert_card_array(all_cards)
+		print("Your cards:", card_str_array)
 
 	def draw(self, card):
 		self.cards[card.suit].append(card)
@@ -92,25 +74,65 @@ class Hand:
 		suit_order += suits
 		return suit_order
 
-	def play_you_card(self, message):
-		print(message)
+	def check_valid_play(self, card, lead_suit):
+		if not lead_suit:
+			return True
+		if card.suit == lead_suit:
+			return True
+		if not len(self.cards[lead_suit]):
+			return True
+		return False
+
+	def get_you_card_choice(self, lead_suit):
+		card_chosen = None
+		card_str = input("Pick a card to play: ").strip()
+		while True:
+			card_info = card_str.split(" ")
+			if len(card_info) == 2:
+				suit = card_info[0].upper()
+				if suit in ["C", "D", "H", "S"]:
+					all_cards_in_suit = self.cards[suit]
+					rank = card_info[1]
+					for card in all_cards_in_suit:
+						if str(card.rank) == rank:
+							card_chosen = card
+			elif len(card_info) == 1:
+				if helpers.check_int(card_str):
+					card_index = int(card_str)
+					all_cards = self.get_all_cards()
+					if card_index > 0 and card_index <= len(all_cards):
+						card_chosen = all_cards[card_index - 1]
+			if card_chosen:
+				card_valid = self.check_valid_play(card_chosen, lead_suit)
+				if card_valid:
+					break
+				card_chosen = None
+			card_str = input("The card choice is not valid. Please try again: ").strip()
+		return card_chosen
+
+	def play_you_card(self, lead_suit):
 		self.print_all_cards()
-		card_choice = self.get_you_card_choice()
+		card_choice = self.get_you_card_choice(lead_suit)
 		self.cards[card_choice.suit].remove(card_choice)
 		return card_choice
 
-	def play(self, suit, trump_suit, message):
+	def play(self, suit, trump_suit, cards_played_so_far, lead):
 		if self.isYou:
-			return self.play_you_card(message)
+			card_str_array = helpers.convert_card_array(cards_played_so_far)
+			message_beginning = "Player " + str(lead + 1) + " led with " + card_str_array[lead] + ". "
+			message_beginning += "So far the cards played are:"
+			print(message_beginning, card_str_array)
+			return self.play_you_card(suit)
 		suit_order = self.get_suit_order(suit, trump_suit)
 		for s in suit_order:
 			if self.cards[s]:
 				return self.cards[s].pop()
 		return None
 
-	def lead(self, message):
+	def lead(self):
 		if self.isYou:
-			return self.play_you_card(message)
+			print("You lead this trick. Pick a card to play.")
+			return self.play_you_card(None)
 		suits = ["C", "D", "H", "S"]
 		all_cards = self.get_all_cards()
 		if len(all_cards) == 0:
