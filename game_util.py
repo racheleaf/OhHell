@@ -43,9 +43,11 @@ class Game:
 				print("Thank you for playing! The final scores are", self.scores)
 				winners_list = self.get_overall_winners()
 				if len(winners_list) == 1:
-					print("The winner was player " + str(winners_list[0] + 1) + ".")
+					print("The winner is player " + str(winners_list[0] + 1) + ".")
 				else:
-					print("Players", ", ".join(list(map(lambda winner: str(winner), winners_list))), " tied for first.")
+					print("Players", ", ".join(list(map(lambda winner: str(winner + 1), winners_list))), " tied for first.")
+				if self.you in winners_list:
+					print("Congratulations!")
 			else:
 				num_tricks = max(self.round_number, self.round_number - self.turnaround_num_cards)
 				self.play_round(self.round_number)
@@ -73,6 +75,10 @@ class Game:
 		welcome_message += "This round consists of " + str(num_tricks) + " trick" + num_tricks_ending + ". "
 		welcome_message += "The trump suit is " + trump_suit + "."
 		print(welcome_message)
+
+		print("BIDDING: ")
+		bids = self.get_bids(trump_suit, num_tricks)
+		print("Here is everyone's bids:", bids)
 		
 		for trick in range(num_tricks):
 			lead_suit, cards_played = self.get_trick_info(lead, trump_suit, trick)
@@ -81,12 +87,27 @@ class Game:
 			lead = winner
 			print("Cards played:", helpers.convert_card_array(cards_played))
 			print("Winner: Player", (winner + 1))
-		print(tricks_taken)
-		for i in range(self.num_players):
-			self.scores[i] += tricks_taken[i]
+		print("The round is over. Here are the number of tricks each player took:", tricks_taken)
+		score_update = self.get_score_update(bids, tricks_taken)
+		print("Each player will get awarded this many points for the round:", score_update)
+		self.update_scores(score_update)
+		print("The current scores are:", self.scores)
+
 		self.round_number += 1
 		self.dealer += 1
 		self.dealer %= self.num_players
+
+	def get_bids(self, trump_suit, num_tricks):
+		lead = (self.dealer + 1) % self.num_players
+		bids = [0] * self.num_players
+		for i in range(lead, lead + self.num_players):
+			player = i % self.num_players
+			restriction = -1
+			if i % self.num_players == self.dealer:
+				sum_bids = reduce(lambda total, bid: total + bid, bids)
+				restriction = num_tricks - restriction
+			bids[player] = self.hands[player].get_bid(trump_suit, self.num_players, restriction)
+		return bids
 
 	def get_trick_info(self, lead, trump_suit, trick_number): 
 		print("TRICK " + str(trick_number + 1) + ":")
@@ -123,11 +144,23 @@ class Game:
 		
 	def get_overall_winners(self): 
 		winners = [0]
-		for i in range(self.num_players):
+		for i in range(1, self.num_players):
 			top_score = self.scores[winners[0]]
 			if self.scores[i] > top_score:
 				winners = [i]
 			elif self.scores[i] == top_score:
 				winners.append(i)
 		return winners
+
+	def get_score_update(self, bids, tricks_taken):
+		score_update = [0] * self.num_players
+		for i in range(self.num_players):
+			if bids[i] == tricks_taken[i]:
+				score_update[i] += 10
+			score_update[i] += tricks_taken[i]
+		return score_update
+
+	def update_scores(self, score_update):
+		for i in range(self.num_players):
+			self.scores[i] += score_update[i]
 

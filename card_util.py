@@ -142,6 +142,28 @@ class Hand:
 		self.cards[card_choice.suit].remove(card_choice)
 		return card_choice
 
+	def get_bid(self, trump_suit, num_players, restriction):
+		if self.isYou:
+			self.print_all_cards()
+			bid = 0
+			bid_str = input("Please bid the number of tricks you think you will take: ")
+			while True:
+				if helpers.check_int(bid_str) and int(bid_str) >= 0 and int(bid_str) < num_players:
+					if int(bid_str) != restriction:
+						bid = int(bid_str)
+						break
+					bid_str = input("Sorry, you cannot bid that number. Please bid a different number: ")
+				else:
+					bid_str = input("Please input a valid bid: ")
+			return bid
+		bid = len(self.cards[trump_suit])
+		if bid == restriction:
+			if bid > 0:
+				bid -= 1
+			else:
+				bid += 1
+		return bid
+
 			
 
 
