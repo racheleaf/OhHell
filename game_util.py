@@ -13,7 +13,7 @@ class Game:
 		self.hands = []
 		self.turnaround_num_cards = 51 // num_players
 		for i in range(num_players):
-			self.hands.append(card_util.Hand(i == self.you))
+			self.hands.append(card_util.Hand(i == self.you, num_players))
 
 	def prepare_deck(self): 
 		deck = card_util.Deck()
@@ -77,7 +77,7 @@ class Game:
 		print("Here are everyone's bids:", bids)
 		
 		for trick in range(num_tricks):
-			lead_suit, cards_played = self.get_trick_info(lead, trump_suit, trick)
+			lead_suit, cards_played = self.get_trick_info(lead, trump_suit, trick, bids, tricks_taken)
 			winner = self.get_trick_winner(cards_played, lead_suit, trump_suit)
 			tricks_taken[winner] += 1
 			lead = winner
@@ -95,24 +95,25 @@ class Game:
 
 	def get_bids(self, trump_suit, num_tricks):
 		lead = (self.dealer + 1) % self.num_players
-		bids = [0] * self.num_players
+		bids = [-1] * self.num_players
 		for i in range(lead, lead + self.num_players):
 			player = i % self.num_players
 			restriction = -1
 			if i % self.num_players == self.dealer:
 				sum_bids = reduce(lambda total, bid: total + bid, bids)
-				restriction = num_tricks - restriction
-			bids[player] = self.hands[player].get_bid(trump_suit, self.num_players, restriction)
+				restriction = num_tricks - sum_bids
+			bids[player] = self.hands[player].get_bid(trump_suit, bids, restriction)
 		return bids
 
-	def get_trick_info(self, lead, trump_suit, trick_number): 
+	def get_trick_info(self, lead, trump_suit, trick_number, bids, tricks_taken): 
 		print("TRICK " + str(trick_number + 1) + ":")
 		cards_played = [None] * self.num_players
 		cards_played[lead] = self.hands[lead].lead()
 		lead_suit = cards_played[lead].suit
 		for i in range(lead + 1, lead + self.num_players):
 			player = i % self.num_players
-			cards_played[player] = self.hands[player].play(lead_suit, trump_suit, cards_played, lead)
+			num_tricks_needed = bids[player] - tricks_taken[player]
+			cards_played[player] = self.hands[player].play(lead_suit, trump_suit, cards_played, lead, num_tricks_needed)
 		return lead_suit, cards_played
 
 	# returns negative number if card1 < card2, positive number if card1 > card2
