@@ -1,5 +1,6 @@
 import random
 import helpers
+import math
 
 class Card: 
 
@@ -9,7 +10,9 @@ class Card:
 
 class Deck:
 
-	def __init__(self, suits, ranks):
+	def __init__(self):
+		suits = ("C", "D", "H", "S")
+		ranks = range(1, 14)
 		self.cards = []
 		for suit in suits:
 			for rank in ranks:
@@ -156,13 +159,28 @@ class Hand:
 				else:
 					bid_str = input("Please input a valid bid: ")
 			return bid
-		bid = len(self.cards[trump_suit])
+		bid = math.floor(self.approx_exp_tricks(trump_suit, num_players))
 		if bid == restriction:
 			if bid > 0:
 				bid -= 1
 			else:
 				bid += 1
 		return bid
+
+	def approx_exp_tricks(self, trump_suit, num_players):
+		exp_tricks = 0
+		all_cards = self.get_all_cards()
+		num_cards = len(all_cards)
+		prob_card_exists = num_players * num_cards / 52
+		for card in all_cards:
+			exp_tricks += (1 - prob_card_exists) ** (13 - card.rank)
+		suits = ["C", "D", "H", "S"]
+		for suit in suits:
+			if suit != trump_suit:
+				suit_length = len(self.cards[suit])
+				exp_cards_in_suit = num_cards / num_players
+				exp_tricks += max(exp_cards_in_suit - suit_length, 0)
+		return exp_tricks
 
 			
 

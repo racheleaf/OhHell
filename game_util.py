@@ -16,23 +16,19 @@ class Game:
 			self.hands.append(card_util.Hand(i == self.you))
 
 	def prepare_deck(self): 
-		suits = ("C", "D", "H", "S")
-		ranks = range(1, 14)
-		deck = card_util.Deck(suits, ranks)
+		deck = card_util.Deck()
 		deck.shuffle()
 		return deck
 
 	def play(self):
-		welcome_message = "Welcome to this sketchy Python implementation of the card game Oh Hell. "
-		welcome_message += "You are player " + str(self.you + 1) + "."
-		print(welcome_message)
+		print("Your game has been created. You are player " + str(self.you + 1) + ".")
 
 		play_next_round = True
 		while play_next_round:
 			play_next_round = False
 			done = False
 			while not done:
-				message = "Are you ready for the next round? (Y/N) "
+				message = "Do you want to play another round? (Y/N) "
 				if self.round_number == 1:
 					message = "Are you ready to play the first round? (Y/N) "
 				reply = input(message).strip().upper()
@@ -78,7 +74,7 @@ class Game:
 
 		print("BIDDING: ")
 		bids = self.get_bids(trump_suit, num_tricks)
-		print("Here is everyone's bids:", bids)
+		print("Here are everyone's bids:", bids)
 		
 		for trick in range(num_tricks):
 			lead_suit, cards_played = self.get_trick_info(lead, trump_suit, trick)
