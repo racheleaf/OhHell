@@ -95,20 +95,21 @@ class Game:
 
 	def get_bids(self, trump_suit, num_tricks):
 		lead = (self.dealer + 1) % self.num_players
-		bids = [-1] * self.num_players
+		bids = [0] * self.num_players
 		for i in range(lead, lead + self.num_players):
 			player = i % self.num_players
 			restriction = -1
 			if i % self.num_players == self.dealer:
 				sum_bids = reduce(lambda total, bid: total + bid, bids)
 				restriction = num_tricks - sum_bids
-			bids[player] = self.hands[player].get_bid(trump_suit, bids, restriction)
+			bids[player] = self.hands[player].get_bid(trump_suit, bids, restriction, lead, self.you)
 		return bids
 
 	def get_trick_info(self, lead, trump_suit, trick_number, bids, tricks_taken): 
 		print("TRICK " + str(trick_number + 1) + ":")
 		cards_played = [None] * self.num_players
-		cards_played[lead] = self.hands[lead].lead()
+		num_tricks_needed = bids[lead] - tricks_taken[lead]
+		cards_played[lead] = self.hands[lead].lead(trump_suit, num_tricks_needed)
 		lead_suit = cards_played[lead].suit
 		for i in range(lead + 1, lead + self.num_players):
 			player = i % self.num_players

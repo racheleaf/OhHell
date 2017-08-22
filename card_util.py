@@ -69,17 +69,6 @@ class Hand:
 		self.cards[card.suit].append(card)
 		self.cards[card.suit].sort(key = lambda card: card.rank)
 
-	# def get_suit_order(self, suit, trump_suit): 
-	# 	suits = ["C", "D", "H", "S"]
-	# 	suit_order = [suit]
-	# 	suits.remove(suit)
-	# 	if (suit != trump_suit):
-	# 		suit_order.append(trump_suit)
-	# 		suits.remove(trump_suit)
-	# 	random.shuffle(suits)
-	# 	suit_order += suits
-	# 	return suit_order
-
 	def check_valid_play(self, card, lead_suit):
 		if not lead_suit:
 			return True
@@ -143,7 +132,7 @@ class Hand:
 				closest_est_tricks_take = est_tricks_take
 		return best_card
 
-	def lead(self):
+	def lead(self, trump_suit, num_tricks_needed):
 		if self.isYou:
 			print("You lead this trick. Pick a card to play.")
 			return self.play_you_card(None)
@@ -151,17 +140,23 @@ class Hand:
 		all_cards = self.get_all_cards()
 		if len(all_cards) == 0:
 			return None
-		random.shuffle(all_cards)
-		card_choice = all_cards[0]
-		self.cards[card_choice.suit].remove(card_choice)
+		card_choice = None
+		closest_est_tricks_take = math.inf
+		for card in all_cards:
+			est_tricks_take = self.get_prob_card_takes(card, card.suit, trump_suit)
+			est_tricks_take += self.approx_win_tricks(trump_suit, card)
+			if math.fabs(est_tricks_take - num_tricks_needed) < closest_est_tricks_take:
+				card_choice = card
+				closest_est_tricks_take = est_tricks_take
 		return card_choice
 
-	def get_bid(self, trump_suit, bids, restriction):
+	def get_bid(self, trump_suit, bids, restriction, lead, you):
+		num_cards = len(self.get_all_cards())
 		if self.isYou:
+			print("RESTRICTION:", restriction)
 			self.print_all_cards()
-			num_cards = len(self.get_all_cards())
 			bid = 0
-			print("Here are the bids so far: (-1 means hasn't bet)", bids)
+			print("Here are the bids so far: (- means hasn't bet)", helpers.convert_bid_array(bids, lead, you))
 			bid_str = input("Please bid the number of tricks you think you will take: ")
 			while True:
 				if helpers.check_int(bid_str) and int(bid_str) >= 0 and int(bid_str) <= num_cards:
@@ -172,7 +167,8 @@ class Hand:
 				else:
 					bid_str = input("Please input a valid bid: ")
 			return bid
-		bid = math.floor(self.approx_win_tricks(trump_suit))
+		bid = round(self.approx_win_tricks(trump_suit))
+		bid = min(num_cards, bid)
 		if bid == restriction:
 			if bid > 0:
 				bid -= 1
@@ -189,14 +185,7 @@ class Hand:
 		for card in all_cards:
 			exp_tricks += self.get_prob_card_max_in_suit(card) * min(num_cards / 4, 1)
 		suits = ["C", "D", "H", "S"]
-		# tricks_trumped = 0
-		# for suit in suits:
-		# 	if suit != trump_suit:
-		# 		suit_length = len(self.cards[suit])
-		# 		exp_cards_in_suit = num_cards / num_players
-		# 		tricks_trumped += max(exp_cards_in_suit - suit_length, 0)
-		# tricks_trumped = min(tricks_trumped, len(self.cards[trump_suit]))
-		# exp_tricks += tricks_trumped
+		exp_tricks += len(self.cards[trump_suit]) / 2
 		return exp_tricks
 
 	def get_prob_card_takes(self, card, lead_suit, trump_suit):
